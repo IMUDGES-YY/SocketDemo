@@ -5,19 +5,23 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.google.gson.Gson;
-import org.w3c.dom.Text;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    //服务器发来的消息
     private TextView tvServerMsg;
-    private EditText etCLientSendMsg;
+    //客户端发送的消息的内容
+    private EditText etClientSendMsg;
+    //发送给谁的消息内容
+    private EditText etToWho;
+    //谁发来的
+    private TextView tvFromWho;
     private Button btnSendMsg;
     private TelephonyManager telephonyManager;
     private String IMEI = "";
@@ -29,11 +33,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 初始化控件
      * */
     private void initViews(){
-        etCLientSendMsg = (EditText) findViewById(R.id.et_cilent_send_msg);
+        etClientSendMsg = (EditText) findViewById(R.id.et_client_send_msg);
         tvServerMsg = (TextView) findViewById(R.id.tv_server_msg);
         btnSendMsg = (Button) findViewById(R.id.btn_send_msg);
         btnSendMsg.setOnClickListener(this);
         telephonyManager = (TelephonyManager) this.getSystemService(this.TELEPHONY_SERVICE);
+        etToWho = (EditText) findViewById(R.id.et_to_id);
+        tvFromWho = (TextView) findViewById(R.id.tv_from_id);
         //获取设备唯一ID
         IMEI = telephonyManager.getDeviceId();
     }
@@ -59,8 +65,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
-                                                //Message messageFromServer = gson.fromJson(msg,Message.class);
-                                                tvServerMsg.setText(msg);
+                                                Message messageFromServer = gson.fromJson(msg,Message.class);
+                                                tvServerMsg.setText(messageFromServer.getMsg());
+                                                tvFromWho.setText(messageFromServer.getFrom());
+                                                etToWho.setText(messageFromServer.getTo());
+                                                //服务器发来的消息内容
+                                                etClientSendMsg.setText(messageFromServer.getMsg());
                                             }
                                         });
                                     }
@@ -88,8 +98,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        if(!TextUtils.isEmpty(etCLientSendMsg.getText())){
-            message.setMsg(etCLientSendMsg.getText().toString());
+        if(!TextUtils.isEmpty(etClientSendMsg.getText())){
+            message.setMsg(etClientSendMsg.getText().toString());
+            message.setTo(etToWho.getText().toString());
+            message.setFrom(IMEI);
             String msg = gson.toJson(message);
             client.setMsg(msg);
             new Thread(new Runnable() {
